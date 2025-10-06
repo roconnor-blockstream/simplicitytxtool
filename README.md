@@ -1,4 +1,4 @@
-# Simplicity Transaction Tool
+# Simplicity Transaction Tool (TESTNET ONLY)
 
 CLI tool that replicates the Simplicity Web IDE functionality for deploying contracts with witness data.
 
