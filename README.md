@@ -20,7 +20,7 @@ cargo install --path .
 
 Or install directly from GitHub:
 ```bash
-cargo install --git https://github.com/YOUR_USERNAME/simplicitybasics simplicity_tx_tool
+cargo install --git https://github.com/iajhff/simplicitytxtool
 ```
 
 ## Commands
