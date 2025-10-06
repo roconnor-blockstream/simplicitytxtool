@@ -25,6 +25,7 @@ fn main() {
     match command.as_str() {
         "address" => cmd_address(&args[2..]),
         "sighash" => cmd_sighash(&args[2..]),
+        "sign" => cmd_sign(&args[2..]),
         "build-tx" => cmd_build_tx(&args[2..]),
         _ => {
             eprintln!("Unknown command: {}", command);
@@ -44,13 +45,51 @@ fn print_help() {
     eprintln!("  sighash <contract.simf> <txid> <vout> <value> <destination> <fee>");
     eprintln!("    Compute sighash for a transaction");
     eprintln!();
+    eprintln!("  sign <privkey_wif> <sighash>");
+    eprintln!("    Sign a sighash with BIP-340 Schnorr signature");
+    eprintln!();
     eprintln!("  build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit>");
     eprintln!("    Build complete transaction with witness");
     eprintln!();
     eprintln!("Examples:");
     eprintln!("  simplicity_tx_tool address contract.simf");
     eprintln!("  simplicity_tx_tool sighash contract.simf abc123... 0 100000 tex1q... 1000");
+    eprintln!("  simplicity_tx_tool sign cABC123... abc123def456...");
     eprintln!("  simplicity_tx_tool build-tx contract.simf abc123... 0 100000 tex1q... 1000 witness.wit");
+}
+
+// Command: Sign sighash with BIP-340
+fn cmd_sign(args: &[String]) {
+    if args.len() != 2 {
+        eprintln!("Usage: simplicity_tx_tool sign <privkey_wif> <sighash>");
+        std::process::exit(1);
+    }
+    
+    let privkey_wif = &args[0];
+    let sighash_hex = &args[1];
+    
+    // Decode WIF private key
+    let privkey = elements::bitcoin::PrivateKey::from_wif(privkey_wif)
+        .expect("Invalid WIF private key");
+    
+    // Parse sighash
+    let sighash_bytes = hex::decode(sighash_hex)
+        .expect("Invalid sighash hex");
+    if sighash_bytes.len() != 32 {
+        eprintln!("Sighash must be 32 bytes");
+        std::process::exit(1);
+    }
+    let mut sighash_array = [0u8; 32];
+    sighash_array.copy_from_slice(&sighash_bytes);
+    
+    // Create message for signing
+    let message = secp256k1::Message::from_digest(sighash_array);
+    
+    // Sign with Schnorr (BIP-340)
+    let keypair = secp256k1::Keypair::from_secret_key(secp256k1::SECP256K1, &privkey.inner);
+    let signature = keypair.sign_schnorr(message);
+    
+    println!("{}", hex::encode(signature.as_ref()));
 }
 
 // Utility functions from web IDE
