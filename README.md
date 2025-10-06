@@ -1,5 +1,7 @@
 # Simplicity Transaction Tool (TESTNET ONLY)
 
+# Work in progress not official tool, no association with blockstream etc.
+
 CLI tool that replicates the Simplicity Web IDE functionality for deploying contracts with witness data.
 
 Based on: https://github.com/BlockstreamResearch/simplicity-webide
