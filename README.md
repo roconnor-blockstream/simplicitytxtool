@@ -169,10 +169,6 @@ It replicates the Web IDE's transaction building logic exactly:
 - **Manual signing**: Use hal tool for signatures (Web IDE has built-in key management)
 - **Same output**: Generates identical transactions
 
-## Differences from `simply`
-
-The `simply` tool uses a dummy environment for witness validation, which makes it difficult to use with custom signatures. This tool uses the real transaction environment, matching the Web IDE approach.
-
 ## License
 
 Same as parent repository
