@@ -63,6 +63,23 @@ simplicity_tx_tool sighash <contract.simf> <txid> <vout> <value> <destination> <
 simplicity_tx_tool sighash p2pk_embedded.simf cbb3ac22... 0 100000 tex1q... 1000
 ```
 
+### Sign Sighash
+
+```bash
+simplicity_tx_tool sign <privkey_wif> <sighash>
+```
+
+**Arguments:**
+- `privkey_wif`: Private key in WIF format (from elements-cli dumpprivkey)
+- `sighash`: 32-byte hex sighash (from sighash command)
+
+**Output:** 64-byte hex BIP-340 Schnorr signature
+
+**Example:**
+```bash
+simplicity_tx_tool sign cSJofGp2qowy... 2f6b093e917fb945...
+```
+
 ### Build Transaction
 
 ```bash
@@ -105,7 +122,7 @@ Copy the sighash output.
 ### 4. Sign Sighash
 
 ```bash
-hal key schnorr-sign <privkey_wif> <sighash>
+simplicity_tx_tool sign <privkey_wif> <sighash>
 ```
 
 Copy the signature.
@@ -161,14 +178,14 @@ It replicates the Web IDE's transaction building logic exactly:
 - Rust toolchain
 - SimplicityHL contracts (.simf files)
 - Witness data (.wit files) with valid signatures
-- hal tool for BIP-340 signing
-- elements-cli or curl for broadcasting
+- elements-cli for key management and destination addresses
+- curl for broadcasting (or elements-cli)
 
 ## Differences from Web IDE
 
 - **CLI-based**: No browser required
 - **Same logic**: Uses identical transaction building code
-- **Manual signing**: Use hal tool for signatures (Web IDE has built-in key management)
+- **Built-in signing**: BIP-340 Schnorr signing included (same as Web IDE)
 - **Same output**: Generates identical transactions
 
 ## License
