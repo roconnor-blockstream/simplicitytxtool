@@ -15,7 +15,7 @@ This tool provides command-line access to:
 - Deploy contracts to Liquid testnet
 
 **Default Constants**
-- **Internal Key**: `0xf5919fa64ce45f8306849072b26c1bfdd2937e6b81774796ff372bd1eb5362d2` (same as Web IDE)
+- **Internal Key**: `0xf5919fa64ce45f8306849072b26c1bfdd2937e6b81774796ff372bd1eb5362d2` (same as Web IDE, can be overridden with `SIMPLICITY_INTERNAL_KEY` env var)
 - **Genesis Hash**: `a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1` (Liquid testnet, can be overridden with `-g`)
 
 ## Installation
@@ -175,6 +175,22 @@ Or use elements-cli:
 elements-cli -chain=liquidtestnet sendrawtransaction <tx_hex>
 ```
 
+## Internal Key (Environment Variable)
+
+Override the default internal key using the `SIMPLICITY_INTERNAL_KEY` environment variable:
+
+```bash
+# Use BIP-341 standard NUMS point (compatible with 'simply' tool)
+export SIMPLICITY_INTERNAL_KEY=50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0
+simplicity_tx_tool address contract.simf
+
+# Custom NUMS point (for privacy or testing)
+export SIMPLICITY_INTERNAL_KEY=<your_32_byte_nums_point_hex>
+simplicity_tx_tool address contract.simf
+```
+
+**⚠️ CRITICAL:** Only use provably unspendable NUMS points! Using a key you control would allow bypassing the Simplicity contract and stealing funds.
+
 ## Genesis Hash Support
 
 The `-g` flag allows you to specify which blockchain network to target:
@@ -184,12 +200,17 @@ The `-g` flag allows you to specify which blockchain network to target:
 a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1
 ```
 
+**Liquid mainnet:**
+```
+1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c3792968888a206003
+```
+
 **Bitcoin mainnet:**
 ```
 6fe28c0ab6f1b372c1a6a246ae63f74f931e83651e085ae689cd6190000000000
 ```
 
-**Why it matters:** The genesis hash is included in the sighash computation, making signatures network-specific. A signature created for Liquid testnet will not be valid on Bitcoin mainnet, and vice versa. This prevents replay attacks across different networks.
+**Why it matters:** The genesis hash is included in the sighash computation, making signatures network-specific. A signature created for Liquid testnet will not be valid on Bitcoin mainnet or Liquid mainnet, and vice versa. This prevents replay attacks across different networks.
 
 ## How It Works
 

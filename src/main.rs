@@ -102,6 +102,33 @@ fn cmd_sign(args: &[String]) {
 
 // Utility functions from web IDE
 fn unspendable_internal_key() -> secp256k1::XOnlyPublicKey {
+    // Check for environment variable first
+    if let Ok(key_hex) = std::env::var("SIMPLICITY_INTERNAL_KEY") {
+        match hex::decode(&key_hex) {
+            Ok(key_bytes) if key_bytes.len() == 32 => {
+                match secp256k1::XOnlyPublicKey::from_slice(&key_bytes) {
+                    Ok(key) => {
+                        eprintln!("Using custom internal key from SIMPLICITY_INTERNAL_KEY");
+                        return key;
+                    }
+                    Err(e) => {
+                        eprintln!("Warning: Invalid internal key in SIMPLICITY_INTERNAL_KEY: {}", e);
+                        eprintln!("Falling back to default Web IDE internal key");
+                    }
+                }
+            }
+            Ok(_) => {
+                eprintln!("Warning: SIMPLICITY_INTERNAL_KEY must be 32 bytes (64 hex chars)");
+                eprintln!("Falling back to default Web IDE internal key");
+            }
+            Err(e) => {
+                eprintln!("Warning: Invalid hex in SIMPLICITY_INTERNAL_KEY: {}", e);
+                eprintln!("Falling back to default Web IDE internal key");
+            }
+        }
+    }
+    
+    // Default: Web IDE internal key (provably unspendable NUMS point)
     secp256k1::XOnlyPublicKey::from_slice(&[
         0xf5, 0x91, 0x9f, 0xa6, 0x4c, 0xe4, 0x5f, 0x83, 0x06, 0x84, 0x90, 0x72, 0xb2, 0x6c, 0x1b,
         0xfd, 0xd2, 0x93, 0x7e, 0x6b, 0x81, 0x77, 0x47, 0x96, 0xff, 0x37, 0x2b, 0xd1, 0xeb, 0x53,
