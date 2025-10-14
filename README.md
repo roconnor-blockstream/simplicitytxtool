@@ -15,8 +15,8 @@ This tool provides command-line access to:
 - Deploy contracts to Liquid testnet
 
 **Default Constants**
-Internal Key: 0xf5919fa64ce45f8306849072b26c1bfdd2937e6b81774796ff372bd1eb5362d2
-Testnet Hash: a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1
+- **Internal Key**: `0xf5919fa64ce45f8306849072b26c1bfdd2937e6b81774796ff372bd1eb5362d2` (same as Web IDE)
+- **Genesis Hash**: `a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1` (Liquid testnet, can be overridden with `-g`)
 
 ## Installation
 
@@ -49,7 +49,7 @@ simplicity_tx_tool address p2pk_embedded.simf
 ### Compute Sighash
 
 ```bash
-simplicity_tx_tool sighash <contract.simf> <txid> <vout> <value> <destination> <fee>
+simplicity_tx_tool sighash <contract.simf> <txid> <vout> <value> <destination> <fee> [-g <genesis_hash>]
 ```
 
 **Arguments:**
@@ -59,12 +59,18 @@ simplicity_tx_tool sighash <contract.simf> <txid> <vout> <value> <destination> <
 - `value`: Input value in satoshis
 - `destination`: Destination address (tex1...)
 - `fee`: Fee in satoshis
+- `-g <genesis_hash>`: (Optional) Genesis hash in hex. Default: Liquid testnet
 
 **Output:** 32-byte hex sighash
 
-**Example:**
+**Examples:**
 ```bash
+# Use default Liquid testnet genesis hash
 simplicity_tx_tool sighash p2pk_embedded.simf cbb3ac22... 0 100000 tex1q... 1000
+
+# Override with Bitcoin mainnet genesis hash
+simplicity_tx_tool sighash p2pk_embedded.simf cbb3ac22... 0 100000 bc1q... 1000 \
+  -g 6fe28c0ab6f1b372c1a6a246ae63f74f931e83651e085ae689cd6190000000000
 ```
 
 ### Sign Sighash
@@ -87,18 +93,24 @@ simplicity_tx_tool sign cSJofGp2qowy... 2f6b093e917fb945...
 ### Build Transaction
 
 ```bash
-simplicity_tx_tool build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit>
+simplicity_tx_tool build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit> [-g <genesis_hash>]
 ```
 
 **Arguments:**
 - Same as sighash command, plus:
 - `witness.wit`: Witness file with signatures
+- `-g <genesis_hash>`: (Optional) Genesis hash in hex. Default: Liquid testnet
 
 **Output:** Complete transaction hex ready to broadcast
 
-**Example:**
+**Examples:**
 ```bash
+# Use default Liquid testnet genesis hash
 simplicity_tx_tool build-tx p2pk_embedded.simf cbb3ac22... 0 100000 tex1q... 1000 witness.wit
+
+# Override with custom genesis hash
+simplicity_tx_tool build-tx p2pk_embedded.simf cbb3ac22... 0 100000 bc1q... 1000 witness.wit \
+  -g 6fe28c0ab6f1b372c1a6a246ae63f74f931e83651e085ae689cd6190000000000
 ```
 
 ## Complete Workflow
@@ -163,6 +175,22 @@ Or use elements-cli:
 elements-cli -chain=liquidtestnet sendrawtransaction <tx_hex>
 ```
 
+## Genesis Hash Support
+
+The `-g` flag allows you to specify which blockchain network to target:
+
+**Liquid testnet (default):**
+```
+a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1
+```
+
+**Bitcoin mainnet:**
+```
+6fe28c0ab6f1b372c1a6a246ae63f74f931e83651e085ae689cd6190000000000
+```
+
+**Why it matters:** The genesis hash is included in the sighash computation, making signatures network-specific. A signature created for Liquid testnet will not be valid on Bitcoin mainnet, and vice versa. This prevents replay attacks across different networks.
+
 ## How It Works
 
 This tool uses the same libraries as the Simplicity Web IDE:
@@ -174,7 +202,7 @@ It replicates the Web IDE's transaction building logic exactly:
 1. Compiles SimplicityHL to Simplicity bytecode
 2. Computes CMR (Commitment Merkle Root)
 3. Creates transaction environment with real transaction data
-4. Computes sighash using `ElementsEnv::c_tx_env().sighash_all()`
+4. Computes sighash using `ElementsEnv::c_tx_env().sighash_all()` with genesis hash
 5. Builds complete transaction with witness data
 
 ## Requirements
@@ -194,7 +222,7 @@ It replicates the Web IDE's transaction building logic exactly:
 
 ## License
 
-Same as parent repository
+GPLv2
 
 ## Credits
 

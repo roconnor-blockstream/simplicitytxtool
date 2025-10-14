@@ -42,20 +42,28 @@ fn print_help() {
     eprintln!("  address <contract.simf>");
     eprintln!("    Generate P2TR address for a contract");
     eprintln!();
-    eprintln!("  sighash <contract.simf> <txid> <vout> <value> <destination> <fee>");
+    eprintln!("  sighash <contract.simf> <txid> <vout> <value> <destination> <fee> [-g <genesis_hash>]");
     eprintln!("    Compute sighash for a transaction");
+    eprintln!("    -g: Genesis hash (hex). Default: Liquid testnet");
     eprintln!();
     eprintln!("  sign <privkey_wif> <sighash>");
     eprintln!("    Sign a sighash with BIP-340 Schnorr signature");
     eprintln!();
-    eprintln!("  build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit>");
+    eprintln!("  build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit> [-g <genesis_hash>]");
     eprintln!("    Build complete transaction with witness");
+    eprintln!("    -g: Genesis hash (hex). Default: Liquid testnet");
+    eprintln!();
+    eprintln!("Genesis hashes:");
+    eprintln!("  Liquid testnet (default): a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1");
+    eprintln!("  Bitcoin mainnet:          6fe28c0ab6f1b372c1a6a246ae63f74f931e83651e085ae689cd6190000000000");
     eprintln!();
     eprintln!("Examples:");
     eprintln!("  simplicity_tx_tool address contract.simf");
     eprintln!("  simplicity_tx_tool sighash contract.simf abc123... 0 100000 tex1q... 1000");
+    eprintln!("  simplicity_tx_tool sighash contract.simf abc123... 0 100000 tex1q... 1000 -g a771da8e...");
     eprintln!("  simplicity_tx_tool sign cABC123... abc123def456...");
     eprintln!("  simplicity_tx_tool build-tx contract.simf abc123... 0 100000 tex1q... 1000 witness.wit");
+    eprintln!("  simplicity_tx_tool build-tx contract.simf abc123... 0 100000 tex1q... 1000 witness.wit -g a771da8e...");
 }
 
 // Command: Sign sighash with BIP-340
@@ -146,6 +154,26 @@ fn liquid_testnet_genesis() -> elements::BlockHash {
     ])
 }
 
+// Parse genesis hash from command line arguments
+// Returns the genesis hash, defaulting to Liquid testnet if not provided
+fn parse_genesis_flag(args: &[String]) -> elements::BlockHash {
+    // Look for -g flag
+    for i in 0..args.len() {
+        if args[i] == "-g" {
+            if i + 1 < args.len() {
+                let genesis_hex = &args[i + 1];
+                return genesis_hex.parse().expect("invalid genesis hash hex");
+            } else {
+                eprintln!("Error: -g flag requires a genesis hash argument");
+                std::process::exit(1);
+            }
+        }
+    }
+    
+    // Default to Liquid testnet
+    liquid_testnet_genesis()
+}
+
 fn control_block(cmr: simplicity::Cmr) -> elements::taproot::ControlBlock {
     let info = taproot_spend_info(cmr);
     let script_ver = script_ver(cmr);
@@ -178,8 +206,8 @@ fn cmd_address(args: &[String]) {
 
 // Command: Compute sighash
 fn cmd_sighash(args: &[String]) {
-    if args.len() != 6 {
-        eprintln!("Usage: simplicity_tx_tool sighash <contract.simf> <txid> <vout> <value> <destination> <fee>");
+    if args.len() < 6 {
+        eprintln!("Usage: simplicity_tx_tool sighash <contract.simf> <txid> <vout> <value> <destination> <fee> [-g <genesis_hash>]");
         std::process::exit(1);
     }
     
@@ -189,6 +217,9 @@ fn cmd_sighash(args: &[String]) {
     let value_in: u64 = args[3].parse().expect("value must be a number");
     let destination_str = &args[4];
     let fee: u64 = args[5].parse().expect("fee must be a number");
+    
+    // Parse optional genesis hash
+    let genesis_hash = parse_genesis_flag(&args[6..]);
     
     // Parse inputs
     let txid = elements::Txid::from_str(txid_str).expect("Invalid txid");
@@ -213,6 +244,7 @@ fn cmd_sighash(args: &[String]) {
         fee,
         lock_time: elements::LockTime::from_consensus(0),
         sequence: elements::Sequence::from_consensus(0),
+        genesis_hash,
     };
     
     // Create transaction environment (exactly like web IDE)
@@ -227,8 +259,8 @@ fn cmd_sighash(args: &[String]) {
 
 // Command: Build complete transaction
 fn cmd_build_tx(args: &[String]) {
-    if args.len() != 7 {
-        eprintln!("Usage: simplicity_tx_tool build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit>");
+    if args.len() < 7 {
+        eprintln!("Usage: simplicity_tx_tool build-tx <contract.simf> <txid> <vout> <value> <destination> <fee> <witness.wit> [-g <genesis_hash>]");
         std::process::exit(1);
     }
     
@@ -239,6 +271,9 @@ fn cmd_build_tx(args: &[String]) {
     let destination_str = &args[4];
     let fee: u64 = args[5].parse().expect("fee must be a number");
     let witness_file = &args[6];
+    
+    // Parse optional genesis hash
+    let genesis_hash = parse_genesis_flag(&args[7..]);
     
     // Parse inputs
     let txid = elements::Txid::from_str(txid_str).expect("Invalid txid");
@@ -271,6 +306,7 @@ fn cmd_build_tx(args: &[String]) {
         fee,
         lock_time: elements::LockTime::from_consensus(0),
         sequence: elements::Sequence::from_consensus(0),
+        genesis_hash,
     };
     
     // Build complete transaction (exactly like web IDE)
@@ -293,6 +329,7 @@ struct TxParams {
     fee: u64,
     lock_time: elements::LockTime,
     sequence: elements::Sequence,
+    genesis_hash: elements::BlockHash,
 }
 
 impl TxParams {
@@ -347,7 +384,7 @@ impl TxParams {
             cmr,
             control_block(cmr),
             annex,
-            liquid_testnet_genesis(),
+            self.genesis_hash,
         )
     }
     
