@@ -14,6 +14,10 @@ This tool provides command-line access to:
 - Build complete transactions with witness data
 - Deploy contracts to Liquid testnet
 
+**Default Constants**
+Internal Key: 0xf5919fa64ce45f8306849072b26c1bfdd2937e6b81774796ff372bd1eb5362d2
+Testnet Hash: a771da8e52ee6ad581ed1e9a99825e5b3b7992225534eaa2ae23244fe26ab1c1
+
 ## Installation
 
 ```bash
